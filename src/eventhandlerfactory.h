@@ -22,6 +22,8 @@
 #include <QObject>
 #include <QStringList>
 
+#include "eventhandlers/baseeventhandler.h"
+
 #ifdef WITH_UINPUT
     #include "eventhandlers/uinputeventhandler.h"
 #endif
@@ -68,8 +70,6 @@
 #else
     #define BACKEND_ELSE_IF if
 #endif
-
-class BaseEventHandler;
 
 class EventHandlerFactory : public QObject
 {

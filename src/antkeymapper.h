@@ -23,6 +23,8 @@
 
 #ifdef Q_OS_WIN
     #include "qtwinkeymapper.h"
+#elif defined(Q_OS_MAC)
+    #include "qtmackeymapper.h"
 #else
     #ifdef WITH_XTEST
         #include "qtx11keymapper.h"
@@ -59,6 +61,8 @@ class AntKeyMapper : public QObject
 
 #ifdef Q_OS_WIN
     QtWinKeyMapper winMapper;
+#elif defined(Q_OS_MAC)
+    QtMacKeyMapper macMapper;
 #else
     #if defined(WITH_XTEST)
     QtX11KeyMapper x11Mapper;

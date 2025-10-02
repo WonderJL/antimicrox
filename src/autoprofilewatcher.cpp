@@ -33,6 +33,9 @@
 #elif defined(Q_OS_WIN)
     #include "winextras.h"
 
+#elif defined(Q_OS_MAC)
+    #include "macrextras.h"
+
 #endif
 
 AutoProfileWatcher *AutoProfileWatcher::_instance = nullptr;
@@ -89,13 +92,14 @@ void AutoProfileWatcher::runAppCheck()
     {
         appLocation = findAppLocation();
     }
-#else
-    // In Windows, get program location no matter what.
+#elif defined(Q_OS_WIN) || defined(Q_OS_MAC)
     appLocation = findAppLocation();
     if (!appLocation.isEmpty())
     {
         baseAppFileName = QFileInfo(appLocation).fileName();
     }
+#else
+    appLocation = findAppLocation();
 #endif
 
     qDebug() << "appLocation is " << appLocation;
@@ -110,6 +114,25 @@ void AutoProfileWatcher::runAppCheck()
     QString nowWindowName = QString();
 #ifdef Q_OS_WIN
     nowWindowName = WinExtras::getCurrentWindowText();
+#elif defined(Q_OS_MAC)
+    MacExtras::FrontmostApplicationInfo info = MacExtras::frontmostApplication();
+    if (info.isValid())
+    {
+        nowWindowName = info.windowTitle;
+        nowWindowClass = info.bundleIdentifier;
+        if (!info.bundleIdentifier.isEmpty())
+            nowWindow = info.bundleIdentifier;
+        else
+            nowWindow = QString::number(info.windowNumber);
+
+        if (appLocation.isEmpty())
+            appLocation = info.executablePath;
+
+        if (baseAppFileName.isEmpty() && !appLocation.isEmpty())
+            baseAppFileName = QFileInfo(appLocation).fileName();
+    }
+    qDebug() << "WINDOW CLASS: " << nowWindowClass;
+    qDebug() << "WINDOW IN FOCUS: " << nowWindow;
 #else
     long currentWindow = X11Extras::getInstance()->getWindowInFocus();
     qDebug() << "getWindowInFocus: " << currentWindow;
@@ -583,6 +606,10 @@ QString AutoProfileWatcher::findAppLocation()
     #endif
 #elif defined(Q_OS_WIN)
     exepath = WinExtras::getForegroundWindowExePath();
+#elif defined(Q_OS_MAC)
+    MacExtras::FrontmostApplicationInfo info = MacExtras::frontmostApplication();
+    if (info.isValid())
+        exepath = info.executablePath;
 #endif
 
     return exepath;

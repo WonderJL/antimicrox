@@ -21,6 +21,10 @@
 
 #include "eventhandlers/baseeventhandler.h"
 
+#ifdef Q_OS_MAC
+    #include "eventhandlers/maceventhandler.h"
+#endif
+
 #include <QDebug>
 #include <QHash>
 
@@ -32,9 +36,15 @@ static QHash<QString, QString> buildDisplayNames()
     #ifdef WITH_VMULTI
     temp.insert("vmulti", "Vmulti");
     #endif
+#elif defined(Q_OS_MAC)
+    temp.insert("macos", "Quartz");
 #else
+    #ifdef WITH_XTEST
     temp.insert("xtest", "Xtest");
+    #endif
+    #ifdef WITH_UINPUT
     temp.insert("uinput", "uinput");
+    #endif
 #endif
     return temp;
 }
@@ -46,18 +56,23 @@ EventHandlerFactory *EventHandlerFactory::instance = nullptr;
 EventHandlerFactory::EventHandlerFactory(QString handler, QObject *parent)
     : QObject(parent)
 {
-#ifdef WITH_UINPUT
+    eventHandler = nullptr;
 
+#ifdef Q_OS_MAC
+    if (handler == "macos")
+    {
+        eventHandler = new MacEventHandler(this);
+    }
+#endif
+
+#ifdef WITH_UINPUT
     if (handler == "uinput")
         eventHandler = new UInputEventHandler(this);
-
 #endif
 
 #ifdef WITH_XTEST
-
     if (handler == "xtest")
         eventHandler = new XTestEventHandler(this);
-
 #endif
 
 #if defined(Q_OS_WIN)
@@ -96,7 +111,11 @@ BaseEventHandler *EventHandlerFactory::handler() { return eventHandler; }
 
 QString EventHandlerFactory::fallBackIdentifier()
 {
-#if defined(Q_OS_UNIX)
+#if defined(Q_OS_WIN)
+    return QStringLiteral("sendinput");
+#elif defined(Q_OS_MAC)
+    return QStringLiteral("macos");
+#elif defined(Q_OS_UNIX)
     static QString temp = "xtest";
     static bool identifier_obtained = false;
     if (identifier_obtained)
@@ -129,8 +148,6 @@ QString EventHandlerFactory::fallBackIdentifier()
         qWarning() << "Neither uinput nor xtest support is detected.";
     identifier_obtained = true;
     return temp;
-#elif defined(Q_OS_WIN)
-    return "sendinput";
 #endif
 }
 
@@ -140,8 +157,14 @@ QStringList EventHandlerFactory::buildEventGeneratorList()
 
 #ifdef Q_OS_WIN
     temp.append("sendinput");
-#else
+#endif
+#ifdef Q_OS_MAC
+    temp.append("macos");
+#endif
+#ifdef WITH_XTEST
     temp.append("xtest");
+#endif
+#ifdef WITH_UINPUT
     temp.append("uinput");
 #endif
     return temp;

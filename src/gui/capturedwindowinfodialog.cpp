@@ -25,7 +25,9 @@
 
 #ifdef Q_OS_WIN
     #include "winextras.h"
-#else
+#elif defined(Q_OS_MAC)
+    #include "macrextras.h"
+#elif defined(WITH_X11)
     #include "x11extras.h"
 #endif
 
@@ -42,8 +44,14 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
 
     selectedMatch = WindowNone;
 
-#ifdef Q_OS_UNIX
+#ifdef Q_OS_MAC
+    MacExtras::FrontmostApplicationInfo frontmost = MacExtras::frontmostApplication();
+#endif
+
+#if defined(WITH_X11)
     X11Extras *info = X11Extras::getInstance();
+#endif
+#if defined(Q_OS_MAC) || defined(WITH_X11)
     ui->winPathChoiceComboBox->setVisible(false);
 #endif
 
@@ -54,7 +62,23 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
     ui->winClassCheckBox->setVisible(false);
     ui->winClassLabel->setVisible(false);
     ui->winClassHeadLabel->setVisible(false);
-#else
+#elif defined(Q_OS_MAC)
+
+    Q_UNUSED(window);
+    ui->winClassHeadLabel->setText(tr("Bundle ID:"));
+    winClass = frontmost.bundleIdentifier;
+    ui->winClassLabel->setText(winClass);
+
+    if (winClass.isEmpty())
+    {
+        ui->winClassCheckBox->setEnabled(false);
+        ui->winClassCheckBox->setChecked(false);
+    } else
+    {
+        ui->winClassCheckBox->setChecked(true);
+        setRadioDefault = true;
+    }
+#elif defined(WITH_X11)
 
     winClass = info->getWindowClass(static_cast<Window>(window));
     ui->winClassLabel->setText(winClass);
@@ -69,12 +93,13 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
         setRadioDefault = true;
     }
 
-    ui->winPathChoiceComboBox->setVisible(false);
 #endif
 
 #ifdef Q_OS_WIN
     winName = WinExtras::getCurrentWindowText();
-#else
+#elif defined(Q_OS_MAC)
+    winName = frontmost.windowTitle;
+#elif defined(WITH_X11)
     winName = info->getWindowTitle(window);
 #endif
 
@@ -106,7 +131,22 @@ CapturedWindowInfoDialog::CapturedWindowInfoDialog(long window, QWidget *parent)
         setRadioDefault = true;
     }
 
-#elif defined(Q_OS_LINUX)
+#elif defined(Q_OS_MAC)
+    winPath = frontmost.executablePath;
+    ui->winPathLabel->setText(winPath);
+
+    if (winPath.isEmpty())
+    {
+        ui->winPathCheckBox->setEnabled(false);
+        ui->winPathCheckBox->setChecked(false);
+    } else
+    {
+        ui->winPathCheckBox->setChecked(true);
+        fullWinPath = true;
+        setRadioDefault = true;
+    }
+
+#elif defined(Q_OS_LINUX) && defined(WITH_X11)
     int pid = info->getApplicationPid(static_cast<Window>(window));
 
     if (pid > 0)

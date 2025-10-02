@@ -33,6 +33,9 @@ static QStringList buildEventGeneratorList()
 #ifdef Q_OS_WIN
     temp.append("sendinput");
 #endif
+#ifdef Q_OS_MAC
+    temp.append("macos");
+#endif
 #ifdef WITH_XTEST
     temp.append("xtest");
 #endif
@@ -48,7 +51,19 @@ AntKeyMapper::AntKeyMapper(QString handler, QObject *parent)
 {
     internalMapper = nullptr;
 
-#if defined(Q_OS_UNIX)
+#if defined(Q_OS_WIN)
+    BACKEND_ELSE_IF(handler == "sendinput")
+    {
+        internalMapper = &winMapper;
+        nativeKeyMapper = nullptr;
+    }
+#elif defined(Q_OS_MAC)
+    if (handler == "macos")
+    {
+        internalMapper = &macMapper;
+        nativeKeyMapper = nullptr;
+    }
+#else
     #ifdef WITH_XTEST
     if (handler == "xtest")
     {
@@ -68,12 +83,6 @@ AntKeyMapper::AntKeyMapper(QString handler, QObject *parent)
         #endif
     }
     #endif
-#elif defined Q_OS_WIN
-    BACKEND_ELSE_IF(handler == "sendinput")
-    {
-        internalMapper = &winMapper;
-        nativeKeyMapper = 0;
-    }
 #endif
 }
 

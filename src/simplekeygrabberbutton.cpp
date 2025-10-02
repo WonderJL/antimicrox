@@ -121,6 +121,15 @@ bool SimpleKeyGrabberButton::eventFilter(QObject *obj, QEvent *event)
             finalvirtual = tempcode;
             checkalias = AntKeyMapper::getInstance()->returnQtKey(finalvirtual);
         }
+#elif defined(Q_OS_MAC)
+        finalvirtual = AntKeyMapper::getInstance()->returnVirtualKey(keyEve->key());
+        checkalias = keyEve->key();
+
+        if (finalvirtual <= 0)
+        {
+            finalvirtual = keyEve->nativeScanCode();
+            checkalias = AntKeyMapper::getInstance()->returnQtKey(finalvirtual);
+        }
 #else
         if (QApplication::platformName() == QStringLiteral("xcb"))
         {
@@ -135,7 +144,11 @@ bool SimpleKeyGrabberButton::eventFilter(QObject *obj, QEvent *event)
 
 #endif
 
+#ifdef Q_OS_MAC
+        controlcode = finalvirtual;
+#else
         controlcode = tempcode;
+#endif
         bool valueUpdated = false;
 
         qDebug() << "slot string for simple key grab button is: " << buttonslot.getSlotString();

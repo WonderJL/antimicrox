@@ -26,10 +26,12 @@
 #include <QScreen>
 #include <QStringList>
 #include <QVariant>
+#include <QKeySequence>
 #include <cmath>
 
 #include "event.h"
 #include "eventhandlerfactory.h"
+#include "antkeymapper.h"
 #include "globalvariables.h"
 #include "joybuttontypes/joybutton.h"
 #include "logger.h"
@@ -595,7 +597,27 @@ int X11KeySymToKeycode(QString key)
 {
     int tempcode = 0;
 
-#if defined(Q_OS_UNIX)
+#if defined(Q_OS_MAC)
+    if (!key.isEmpty())
+    {
+        const int modifierMask = Qt::ShiftModifier | Qt::ControlModifier | Qt::AltModifier | Qt::MetaModifier | Qt::KeypadModifier;
+        QKeySequence sequence = QKeySequence::fromString(key, QKeySequence::NativeText);
+        int qtKey = 0;
+        if (!sequence.isEmpty())
+            qtKey = sequence[0] & ~modifierMask;
+        else if (key.length() == 1)
+        {
+            const QChar character = key.at(0);
+            if (character.isLetter())
+                qtKey = character.toUpper().unicode();
+            else
+                qtKey = character.unicode();
+        }
+
+        if (qtKey > 0)
+            tempcode = AntKeyMapper::getInstance()->returnVirtualKey(qtKey);
+    }
+#elif defined(Q_OS_UNIX)
     BaseEventHandler *handler = EventHandlerFactory::getInstance()->handler();
     if (key.length() > 0)
     {
@@ -620,8 +642,6 @@ int X11KeySymToKeycode(QString key)
         tempcode = WinExtras::getVirtualKey(key);
         if (tempcode <= 0 && key.length() == 1)
         {
-            // qDebug() << "KEY: " << key;
-            // int oridnal = key.toUtf8().constData()[0];
             int ordinal = QVariant(key.toUtf8().constData()[0]).toInt();
             tempcode = VkKeyScan(ordinal);
             int modifiers = tempcode >> 8;
@@ -632,9 +652,6 @@ int X11KeySymToKeycode(QString key)
                 tempcode |= VK_CONTROL;
             if ((modifiers & 4) != 0)
                 tempcode |= VK_MENU;
-            // tempcode = VkKeyScan(QVariant(key.constData()).toInt());
-            // tempcode = OemKeyScan(key.toUtf8().toInt());
-            // tempcode = OemKeyScan(ordinal);
         }
     }
 
@@ -648,7 +665,29 @@ QString keycodeToKeyString(int keycode, int alias)
 
     Q_UNUSED(alias)
 
-#if defined(Q_OS_UNIX)
+#if defined(Q_OS_MAC)
+    if (keycode <= 0)
+    {
+        newkey = QStringLiteral("[NO KEY]");
+    } else
+    {
+        QtKeyMapperBase *mapper = AntKeyMapper::getInstance()->getKeyMapper();
+        if (mapper)
+        {
+            const int qtKey = mapper->returnQtKey(keycode);
+            if (qtKey > 0)
+            {
+                newkey = QKeySequence(qtKey).toString(QKeySequence::NativeText);
+                if (newkey.isEmpty())
+                    newkey = QKeySequence(qtKey).toString(QKeySequence::PortableText);
+            }
+        }
+
+        if (newkey.isEmpty())
+            newkey = QStringLiteral("0x%1").arg(keycode, 0, 16);
+    }
+
+#elif defined(Q_OS_UNIX)
     Q_UNUSED(alias);
 
     if (keycode <= 0)

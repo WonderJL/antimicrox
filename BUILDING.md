@@ -70,6 +70,17 @@ For setting up your environment you may use `msys2`. Alternatively, you may use 
 
 </details>
 
+<details>
+  <summary>macOS dependencies</summary>
+
+```bash
+brew install cmake ninja qt sdl2
+```
+
+After building, run `macdeployqt build/bin/AntiMicroX.app` to bundle Qt frameworks if you want a redistributable `.app`. Remember to grant AntiMicroX Accessibility access on first launch so it can synthesize keyboard and mouse events.
+
+</details>
+
 ## Basic building
 
 This way of building is useful for testing purposes.
@@ -97,6 +108,8 @@ Run built binaries
 ```
 ./bin/antimicrox
 ```
+
+On macOS the build step produces `bin/AntiMicroX.app`. Launch it from Finder or via `open bin/AntiMicroX.app` after granting Accessibility permissions.
 
 #### MSVC building tips
 

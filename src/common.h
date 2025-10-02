@@ -29,6 +29,7 @@
 #include <QThread>
 #include <QTranslator>
 #include <QWaitCondition>
+#include <QStandardPaths>
 
 #include <SDL2/SDL_version.h>
 
@@ -69,6 +70,8 @@ inline QString configPath()
     return findWinLocalConfigPath();
 #elif defined(Q_OS_WIN)
     return findWinSystemConfigPath();
+#elif defined(Q_OS_MAC)
+    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 #else
     return (!qgetenv("XDG_CONFIG_HOME").isEmpty()) ? QString::fromUtf8(qgetenv("XDG_CONFIG_HOME")) + "/antimicrox"
                                                    : QDir::homePath() + "/.config/antimicrox";
@@ -82,6 +85,8 @@ inline QString configFilePath()
     return QString(configPath()).append("\\").append(configFileName);
 #elif defined(Q_OS_WIN)
     return QString(configPath()).append("\\").append(configFileName);
+#elif defined(Q_OS_MAC)
+    return QString(configPath()).append("/").append(configFileName);
 #else
     return QString(configPath()).append("/").append(configFileName);
 #endif

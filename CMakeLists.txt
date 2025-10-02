@@ -63,13 +63,13 @@ set(ANTIMICROX_MAJOR_VERSION 3)
 set(ANTIMICROX_MINOR_VERSION 5)
 set(ANTIMICROX_PATCH_VERSION 1)
 
-if(UNIX)
+if(UNIX AND NOT APPLE)
     option(WITH_X11 "Compile with support for X11." ON)
     option(WITH_UINPUT "Compile with support for uinput. uinput will be usable to simulate events." ON)
     option(INSTALL_UINPUT_UDEV_RULES "Generate udev rules allowing users using uinput without root permissions." ON)
     option(WITH_XTEST "Compile with support for XTest.  XTest will be usable to simulate events." ON)
     option(APPDATA "Build project with AppData file support." ON)
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
 if(WIN32)
     option(PORTABLE_WIN "Compile app for portability" OFF)
@@ -98,7 +98,7 @@ if(CHECK_FOR_UPDATES)
     add_compile_definitions(CHECK_FOR_UPDATES="${CHECK_FOR_UPDATES}")
 endif(CHECK_FOR_UPDATES)
 
-if(UNIX)
+if(UNIX AND NOT APPLE)
     if(WITH_XTEST AND NOT WITH_X11)
         set(WITH_XTEST OFF)
         message("Cannot use XTest without X11. Disabling XTest support.")
@@ -117,7 +117,7 @@ if(UNIX)
     if(NOT WITH_XTEST AND NOT WITH_UINPUT)
         message(FATAL_ERROR "No system is defined for simulating events.")
     endif(NOT WITH_XTEST AND NOT WITH_UINPUT)
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
 ###############################
 # PLATFORM-INDEPENDENT FILES
@@ -432,7 +432,22 @@ set(antimicrox_RESOURCES src/resources.qrc)
 # PLATFORM-DEPENDENT FILES
 ###############################
 
-if(UNIX)
+if(APPLE)
+    LIST(APPEND antimicrox_SOURCES
+            src/autoprofilewatcher.cpp
+            src/eventhandlers/maceventhandler.cpp
+            src/gui/capturedwindowinfodialog.cpp
+            src/macrextras.mm
+            src/qtmackeymapper.cpp
+            )
+    LIST(APPEND antimicrox_HEADERS
+            src/autoprofilewatcher.h
+            src/eventhandlers/maceventhandler.h
+            src/gui/capturedwindowinfodialog.h
+            src/macrextras.h
+            src/qtmackeymapper.h
+            )
+elseif(UNIX)
     if(WITH_X11)
         LIST(APPEND antimicrox_SOURCES src/x11extras.cpp
                 src/qtx11keymapper.cpp
@@ -486,13 +501,13 @@ elseif(WIN32)
     LIST(APPEND antimicrox_FORMS
         src/gui/winappprofiletimerdialog.ui    
     )
-endif(UNIX)
+endif()
 
 ###############################
 # DEFINITIONS
 ###############################
 
-if(UNIX)
+if(UNIX AND NOT APPLE)
     if(WITH_X11)
         add_definitions(-DWITH_X11)
     endif(WITH_X11)
@@ -504,7 +519,7 @@ if(UNIX)
     if(WITH_UINPUT)
         add_definitions(-DWITH_UINPUT)
     endif(WITH_UINPUT)
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
 ###############################
 # REQUIRED PACKAGES
@@ -551,11 +566,29 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 # SDL
 set(SDL_REQUIRED_VERSION 2.0.6)
 find_package(SDL2 REQUIRED)
+if(APPLE)
+    list(REMOVE_ITEM SDL2_LIBRARIES "-framework" "Cocoa" "-lCocoa")
+endif()
 
 # Others
 if(WITH_X11)
     find_package(X11 REQUIRED)
 endif(WITH_X11)
+
+if(APPLE)
+    find_library(APPKIT_FRAMEWORK AppKit)
+    find_library(APPLICATIONSERVICES_FRAMEWORK ApplicationServices)
+    find_library(IOKIT_FRAMEWORK IOKit)
+    find_library(CARBON_FRAMEWORK Carbon)
+    find_library(COCOA_FRAMEWORK Cocoa)
+    set(APPLE_LIBS
+        ${APPKIT_FRAMEWORK}
+        ${APPLICATIONSERVICES_FRAMEWORK}
+        ${IOKIT_FRAMEWORK}
+        ${CARBON_FRAMEWORK}
+        ${COCOA_FRAMEWORK}
+    )
+endif()
 
 ###############################
 # LINKER LIBRARIES
@@ -634,7 +667,12 @@ target_link_libraries(antimicrox
         ${X11_LIBS}
         ${SDL2_LIBRARIES}
         ${EXTRA_LIBS}
+        ${APPLE_LIBS}
         )
+
+if(APPLE)
+    set_target_properties(antimicrox PROPERTIES MACOSX_BUNDLE TRUE)
+endif()
 
 target_include_directories(antimicrox PUBLIC
         ${SDL2_INCLUDE_DIRS}/SDL2
@@ -645,9 +683,15 @@ target_include_directories(antimicrox PUBLIC
 ###############################
 
 # Specify out directory for final executable.
-install(TARGETS antimicrox RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+if(APPLE)
+    install(TARGETS antimicrox
+            BUNDLE DESTINATION "."
+            RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+else()
+    install(TARGETS antimicrox RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}")
+endif()
 
-if(UNIX)
+if(UNIX AND NOT APPLE)
     find_package(ECM REQUIRED NO_MODULE)
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${ECM_MODULE_DIR})
     include(ECMInstallIcons)
@@ -669,10 +713,10 @@ if(UNIX)
 
     # Copy current Changelog file to location that the resource file expects.
     install(FILES CHANGELOG.md DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicrox")
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
 # Add man page for *nix platforms.
-if(UNIX)
+if(UNIX AND NOT APPLE)
     add_subdirectory(other)
 
     # Only way to force install target to be dependent on manpage.
@@ -682,14 +726,14 @@ if(UNIX)
         # Only way to force install target to be dependent on appdata.
         install(CODE "execute_process(COMMAND ${CMAKE_BUILD_TOOL} appdata WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")")
     endif(APPDATA)
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
-if(UNIX)
+if(UNIX AND NOT APPLE)
     if(INSTALL_UINPUT_UDEV_RULES)
         message("Udev rules installation enabled.")
         install(FILES other/60-antimicrox-uinput.rules DESTINATION "/usr/lib/udev/rules.d/")
     endif(INSTALL_UINPUT_UDEV_RULES)
-endif(UNIX)
+endif(UNIX AND NOT APPLE)
 
 # Copy libraries needed by Windows
 if(WIN32)
@@ -775,11 +819,13 @@ if(WITH_TESTS)
 endif(WITH_TESTS)
 
 # Install SDL database with linked License file
-if(UNIX)
+if(UNIX AND NOT APPLE)
+    install(FILES share/gamecontrollerdb_linux.txt DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicrox/" RENAME gamecontrollerdb.txt)
+elseif(APPLE)
     install(FILES share/gamecontrollerdb_linux.txt DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicrox/" RENAME gamecontrollerdb.txt)
 elseif(WIN32)
     install(FILES share/gamecontrollerdb_windows.txt DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicrox/" RENAME gamecontrollerdb.txt)
-endif(UNIX)
+endif()
 install(FILES share/LICENSE_SDL_GameControllerDB DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/antimicrox/")
 
 ###############################

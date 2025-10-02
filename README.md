@@ -17,7 +17,7 @@ For now, this app will have only limited support and will not get any new featur
 
 ## Description
 
-AntiMicroX is a graphical program used to map gamepad keys to keyboard, mouse, scripts and macros. You can use this program to control any desktop application with a gamepad on Linux🐧 and Windows 🪟.  
+AntiMicroX is a graphical program used to map gamepad keys to keyboard, mouse, scripts and macros. You can use this program to control any desktop application with a gamepad on Linux🐧, Windows 🪟, and macOS 🍏.  
 It can be also used for generating SDL2 configuration (useful for mapping atypical gamepads to generic ones like xbox360).
 
 We support X.org and Wayland.
@@ -76,6 +76,29 @@ http://www.gnu.org/licenses/gpl.txt
 ### Windows
 
 Just download `antimicrox-X.X.X-AMD64.exe` from [Release site](https://github.com/AntiMicroX/antimicrox/releases/latest) and install it.
+
+### macOS
+
+Native Qt builds are supported on macOS (Intel and Apple Silicon). The easiest way to get the build toolchain is via [Homebrew](https://brew.sh/):
+
+```bash
+brew install cmake ninja qt sdl2
+```
+
+Ensure CMake can locate Qt by exporting the prefix path (adjust for your Qt version):
+
+```bash
+export CMAKE_PREFIX_PATH="$(brew --prefix qt)"
+```
+
+Then configure and build AntiMicroX:
+
+```bash
+cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+cmake --build build
+```
+
+The resulting `AntiMicroX.app` bundle lives under `build/bin/`. On first launch, macOS prompts for **Accessibility** permission—enable it to allow keyboard and mouse event injection.
 
 ### Flatpak
 
