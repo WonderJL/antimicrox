@@ -285,8 +285,8 @@ tray if available.</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QCheckBox" name="hideEmptyCheckBox">
+        <item>
+         <widget class="QCheckBox" name="hideEmptyCheckBox">
            <property name="toolTip">
             <string>This option will cause the program to hide all
 buttons that have no slots assigned to them.
@@ -296,10 +296,20 @@ to bring up the edit dialog for gamepad buttons.</string>
            <property name="text">
             <string>Hide Empty Buttons</string>
            </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="autoLoadPreviousCheckBox">
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="virtualControllerCheckBox">
+          <property name="toolTip">
+           <string>Expose a virtual HID gamepad using default keyboard bindings. Requires restarting AntiMicroX.</string>
+          </property>
+          <property name="text">
+           <string>Enable Virtual Controller (macOS)</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QCheckBox" name="autoLoadPreviousCheckBox">
            <property name="toolTip">
             <string>When the program is launched, open the last
 known profile that was opened during the

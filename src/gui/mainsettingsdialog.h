@@ -115,6 +115,10 @@ class MainSettingsDialog : public QDialog
     AutoProfileInfo *allDefaultProfile;
     QList<InputDevice *> *connectedDevices;
 
+#ifdef Q_OS_MAC
+    bool virtualControllerEnabledInitial;
+#endif
+
     void resetGeneralSett();
     void resetAutoProfSett();
     void resetMouseSett();

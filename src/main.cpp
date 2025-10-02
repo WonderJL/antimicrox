@@ -35,6 +35,10 @@
 #include "eventhandlerfactory.h"
 #include "logger.h"
 
+#ifdef Q_OS_MAC
+    #include "macos/macvirtualcontrollermanager.h"
+#endif
+
 #include <QApplication>
 #include <QDebug>
 #include <QDir>
@@ -54,6 +58,7 @@
 #include <QtGlobal>
 
 #include <iostream>
+#include <memory>
 #include <stdexcept>
 
 #ifdef Q_OS_UNIX
@@ -449,6 +454,19 @@ int main(int argc, char *argv[])
     }
 
     antimicrox.installTranslator(&myappTranslator);
+
+#ifdef Q_OS_MAC
+    std::unique_ptr<MacVirtualControllerManager> virtualControllerManager;
+    if (settings.value("VirtualController/Enabled", false).toBool())
+    {
+        virtualControllerManager = std::make_unique<MacVirtualControllerManager>();
+        if (!virtualControllerManager->start())
+        {
+            qWarning() << QObject::tr("Unable to start the virtual controller backend. Continuing without virtual controller support.");
+            virtualControllerManager.reset();
+        }
+    }
+#endif
 
     if (cmdutility.shouldListControllers())
     {

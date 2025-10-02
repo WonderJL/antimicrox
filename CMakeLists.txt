@@ -437,6 +437,7 @@ if(APPLE)
             src/autoprofilewatcher.cpp
             src/eventhandlers/maceventhandler.cpp
             src/gui/capturedwindowinfodialog.cpp
+            src/macos/macvirtualcontrollermanager.mm
             src/macrextras.mm
             src/qtmackeymapper.cpp
             )
@@ -444,6 +445,8 @@ if(APPLE)
             src/autoprofilewatcher.h
             src/eventhandlers/maceventhandler.h
             src/gui/capturedwindowinfodialog.h
+            src/macos/macvirtualpad.h
+            src/macos/macvirtualcontrollermanager.h
             src/macrextras.h
             src/qtmackeymapper.h
             )

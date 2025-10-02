@@ -189,6 +189,13 @@ MainSettingsDialog::MainSettingsDialog(AntiMicroSettings *settings, QList<InputD
         ui->launchInTrayCheckBox->setChecked(true);
     }
 
+#ifdef Q_OS_MAC
+    virtualControllerEnabledInitial = settings->value("VirtualController/Enabled", false).toBool();
+    ui->virtualControllerCheckBox->setChecked(virtualControllerEnabledInitial);
+#else
+    ui->virtualControllerCheckBox->setVisible(false);
+#endif
+
     ui->showLowBatteryNotification->setChecked(settings->value("Notifications/notify_about_low_battery", true).toBool());
     ui->showEmptyBatteryNotification->setChecked(settings->value("Notifications/notify_about_empty_battery", true).toBool());
 
@@ -591,6 +598,17 @@ void MainSettingsDialog::saveNewSettings()
 
     bool launchInTray = ui->launchInTrayCheckBox->isChecked();
     settings->setValue("LaunchInTray", launchInTray ? "1" : "0");
+
+#ifdef Q_OS_MAC
+    bool enableVirtualController = ui->virtualControllerCheckBox->isChecked();
+    settings->setValue("VirtualController/Enabled", enableVirtualController);
+    if (enableVirtualController != virtualControllerEnabledInitial)
+    {
+        QMessageBox::information(this, tr("Restart Required"),
+                                 tr("Virtual controller setting changes will take effect after restarting AntiMicroX."));
+        virtualControllerEnabledInitial = enableVirtualController;
+    }
+#endif
 
     bool notify_bat_low = ui->showLowBatteryNotification->isChecked();
     settings->setValue("Notifications/notify_about_low_battery", notify_bat_low);
